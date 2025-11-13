@@ -1,0 +1,17 @@
+{
+    "name": "PrepareNext.Com",
+    "short_name": "PrepareNext",
+    "start_url": "/index.php",
+    "background_color": "#00c5d0",
+    "description": "Most Trusted Job Site In India.",
+    "display": "fullscreen",
+    "theme_color": "#00c5d0",
+    "icons": [
+        {
+            "src": "/logo/logo.jpg",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any maskable"
+        }
+    ]
+}

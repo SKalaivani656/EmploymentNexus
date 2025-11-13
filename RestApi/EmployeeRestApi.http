@@ -1,0 +1,236 @@
+@basurl = http://localhost:8888/preparenext_latest/public/api
+//@basurl = http://127.0.0.1:8000/api
+//@basurl = https://preparenext.com/api
+@token = 86508650286508658650865028650865s0239602396039602396002396023960396023960
+
+### 1) DEVICE TOKEN
+
+POST {{basurl}}/employee/devicetoken
+content-type: application/json
+Accept: Application/json
+Authorization: {{token}}
+
+{
+    "device_token": "tokenone",
+    "device_model": "test",
+    "device_brand": "test",
+    "device_manufacturer": "test"
+}
+
+### 2) SUBSCRIBE
+
+POST {{basurl}}/employee/subscribe
+content-type: application/json
+Accept: Application/json
+Authorization: {{token}}
+
+{
+    "email" : "test@gmdail.com"
+}
+
+
+
+### 3) JOB LIST
+
+GET {{basurl}}/job/joblist
+content-type: application/json
+Accept: Application/json
+Authorization: {{token}}
+
+
+### 4) JOB LIST BY ID
+
+POST {{basurl}}/job/getjobbyid
+content-type: application/json
+Accept: Application/json
+Authorization: {{token}}
+
+{
+    "jobuuid" : "30c21b46-40cd-44e1-9865-3181a8b7efca"
+}
+
+### 4) JOB LIST BY ID
+
+POST {{basurl}}/job/getjobtypelist
+content-type: application/json
+Accept: Application/json
+Authorization: {{token}}
+
+{
+    "name" : "company",
+    "value" : "8Queens"
+}
+
+
+
+
+### 5) JOB CLASSIFICATION
+
+POST {{basurl}}/job/jobclassification
+content-type: application/json
+Accept: Application/json
+Authorization: {{token}}
+
+{
+    "model" : "course",
+    "is_popular" : false,
+    "is_top" : false
+}
+
+### 6) GET JOB CLASSIFICATION BY ID
+
+POST {{basurl}}/job/getjobclassificationbyid
+content-type: application/json
+Accept: Application/json
+Authorization: {{token}}
+
+{
+    "model" : "category",
+    "uuid" : "2ab2dbb9-1d17-4542-ad2e-768899f74137"
+}
+
+### 7) JOB SEARCH
+
+POST {{basurl}}/job/jobsearch
+content-type: application/json
+Accept: Application/json
+Authorization: {{token}}
+
+{
+    "search" : "a"
+}
+
+
+### 7) JOB FILTER
+
+GET {{basurl}}/job/jobfilter
+content-type: application/json
+Accept: Application/json
+Authorization: {{token}}
+
+
+### 17) PUSH NOTIFICATION
+
+POST {{basurl}}/job/pushnotification
+content-type: application/json
+Accept: Application/json
+Authorization: {{token}}
+
+{
+     "title" : "Engineer Trainee | Apply for (Civil, Mechanical ,Electrical)",
+     "message" : "Recruitment for RITES Limited in 2021 | Apply For 46 post",
+     "id" : "test good",
+     "type" : "test good"
+}
+
+
+
+### 8) BLOG LIST
+
+GET {{basurl}}/blog/bloglist
+content-type: application/json
+Accept: Application/json
+Authorization: {{token}}
+
+
+### 9) BLOG LIST BY ID
+
+POST {{basurl}}/blog/getblogbyid
+content-type: application/json
+Accept: Application/json
+Authorization: {{token}}
+
+{
+    "bloguuid" : "f3caf07a-7037-4e50-903e-2704e1ac3d0e"
+}
+
+### 10) BLOG CLASSIFICATION
+
+POST {{basurl}}/blog/blogclassification
+content-type: application/json
+Accept: Application/json
+Authorization: {{token}}
+
+{
+    "model" : "category",
+    "is_popular" : false,
+    "is_top" : false
+}
+
+### 11) GET BLOG CLASSIFICATION BY ID
+
+POST {{basurl}}/blog/getblogclassificationbyid
+content-type: application/json
+Accept: Application/json
+Authorization: {{token}}
+
+{
+    "model" : "category",
+    "uuid" : "354d9f61-3541-4f44-9938-a5368d739535"
+}
+
+### 12) BLOG FILTER
+
+POST {{basurl}}/blog/blogfilter
+content-type: application/json
+Accept: Application/json
+Authorization: {{token}}
+
+{
+     "search" : "b"
+}
+
+### 13) VIDEO LIST
+
+GET {{basurl}}/video/videolist
+content-type: application/json
+Accept: Application/json
+Authorization: {{token}}
+
+
+### 14) VIDEO LIST BY ID
+
+POST {{basurl}}/video/getvideobyid
+content-type: application/json
+Accept: Application/json
+Authorization: {{token}}
+
+{
+    "videouuid" : "81553cec-808b-4fb4-ab0d-d3b1025827e3"
+}
+
+### 15) VIDEO CLASSIFICATION
+
+POST {{basurl}}/video/videoclassification
+content-type: application/json
+Accept: Application/json
+Authorization: {{token}}
+
+{
+    "model" : "category",
+    "is_popular" : false,
+    "is_top" : false
+}
+
+### 16) GET VIDEO CLASSIFICATION BY ID
+
+POST {{basurl}}/video/getvideoclassificationbyid
+content-type: application/json
+Accept: Application/json
+Authorization: {{token}}
+
+{
+    "model" : "category",
+    "uuid" : "4d52c7e4-2446-414a-8e5b-6792ca488081"
+}
+
+### 17) VIDEO FILTER
+
+POST {{basurl}}/video/videofilter
+content-type: application/json
+Accept: Application/json
+Authorization: {{token}}
+
+{
+     "search" : "v"
+}

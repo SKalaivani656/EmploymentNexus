@@ -1,0 +1,16 @@
+# Created October, 01, 2015.
+# Author: Vimalraj E
+# Email : info[at]preparenext.com
+# Edited : August 21, 2021
+
+User-agent: *
+Disallow:
+
+User-agent: Googlebot
+Disallow:
+User-agent: Googlebot-image
+Disallow:
+
+Allow: /images/*.jpg
+
+Sitemap: https://preparenext.com/sitemap.xml
