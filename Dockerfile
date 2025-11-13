@@ -1,8 +1,15 @@
 # Use official PHP image
 FROM php:8.2-apache
 
-# Install required extensions
-RUN docker-php-ext-install pdo pdo_mysql pdo_pgsql
+# Install system dependencies for PostgreSQL and MySQL
+RUN apt-get update && apt-get install -y \
+    libpq-dev \
+    libzip-dev \
+    unzip \
+    zip \
+    git \
+    curl \
+    && docker-php-ext-install pdo pdo_mysql pdo_pgsql
 
 # Enable Apache mod_rewrite
 RUN a2enmod rewrite
@@ -10,7 +17,7 @@ RUN a2enmod rewrite
 # Set working directory
 WORKDIR /var/www/html
 
-# Copy everything
+# Copy all files
 COPY . .
 
 # Install Composer
@@ -22,7 +29,7 @@ RUN composer install --no-dev --optimize-autoloader
 # Set permissions
 RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
 
-# Run migrations and seed database (ignore seeding errors)
+# Run migrations and seed database (ignore errors)
 RUN php artisan migrate --force || true
 RUN php artisan db:seed --force || true
 
