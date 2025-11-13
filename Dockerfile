@@ -7,7 +7,7 @@ WORKDIR /var/www/html
 # Install required PHP extensions and system dependencies
 RUN apt-get update && apt-get install -y \
     git zip unzip libpng-dev libonig-dev libxml2-dev libzip-dev libpq-dev \
-    && docker-php-ext-install pdo pdo_mysql mbstring exif pcntl bcmath gd zip
+    && docker-php-ext-install pdo pdo_pgsql mbstring exif pcntl bcmath gd zip
 
 # Enable Apache mod_rewrite
 RUN a2enmod rewrite
@@ -29,21 +29,24 @@ COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 RUN composer install --no-dev --optimize-autoloader --no-interaction
 
 # Clear caches and optimize
-RUN php artisan config:clear && php artisan cache:clear && php artisan route:clear && php artisan view:clear
+RUN php artisan config:clear || true && php artisan cache:clear || true && \
+    php artisan route:clear || true && php artisan view:clear || true
 
 # Copy the example environment file if .env doesn’t exist
 RUN if [ ! -f .env ]; then cp .env.example .env; fi
 
 # Generate key
-RUN php artisan key:generate --force
+RUN php artisan key:generate --force || true
 
-# === OPTIONAL ===
-# Run migrations automatically (will skip errors if DB not ready)
+# Run migrations automatically (safe if DB not ready)
 RUN php artisan migrate --force || true
 
 # Redirect logs to Render’s logs
 RUN sed -i 's|ErrorLog.*|ErrorLog /dev/stderr|g' /etc/apache2/apache2.conf \
     && sed -i 's|CustomLog.*|CustomLog /dev/stdout combined|g' /etc/apache2/apache2.conf
+
+# Optional: fix Apache “ServerName” warning
+RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf
 
 # Expose port 80
 EXPOSE 80
