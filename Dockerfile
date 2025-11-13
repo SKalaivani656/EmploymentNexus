@@ -1,37 +1,52 @@
-# -----------------------------
-# Laravel Dockerfile for Render (no shell access needed)
-# -----------------------------
+# Use the official PHP-Apache image
 FROM php:8.2-apache
 
-RUN apt-get update && apt-get install -y \
-    git unzip libpng-dev libonig-dev libxml2-dev libpq-dev zip curl \
-    && docker-php-ext-install pdo pdo_pgsql mbstring exif pcntl bcmath gd
+# Set working directory
+WORKDIR /var/www/html
 
+# Install required PHP extensions and system dependencies
+RUN apt-get update && apt-get install -y \
+    git zip unzip libpng-dev libonig-dev libxml2-dev libzip-dev libpq-dev \
+    && docker-php-ext-install pdo pdo_mysql mbstring exif pcntl bcmath gd zip
+
+# Enable Apache mod_rewrite
 RUN a2enmod rewrite
 
-WORKDIR /var/www/html
+# Copy project files to container
 COPY . .
 
-COPY --from=composer:2.6 /usr/bin/composer /usr/bin/composer
-RUN composer install --no-dev --optimize-autoloader
+# Set proper Apache document root to Laravel's public folder
+RUN sed -i 's|/var/www/html|/var/www/html/public|g' /etc/apache2/sites-available/000-default.conf
 
-RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
-RUN chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
+# Fix permissions for Laravel
+RUN chown -R www-data:www-data /var/www/html \
+    && chmod -R 755 /var/www/html/storage /var/www/html/bootstrap/cache
 
-RUN sed -i 's|ErrorLog .*|ErrorLog /dev/stderr|' /etc/apache2/apache2.conf && \
-    sed -i 's|CustomLog .*|CustomLog /dev/stdout combined|' /etc/apache2/apache2.conf
+# Install Composer
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
-ENV LOG_CHANNEL=stderr
-ENV LOG_LEVEL=debug
+# Install Laravel dependencies
+RUN composer install --no-dev --optimize-autoloader --no-interaction
 
-RUN php artisan config:clear || true && \
-    php artisan cache:clear || true && \
-    php artisan view:clear || true && \
-    php artisan route:clear || true && \
-    php artisan key:generate --force || true
+# Clear caches and optimize
+RUN php artisan config:clear && php artisan cache:clear && php artisan route:clear && php artisan view:clear
 
-# 👇 Auto-run database migrations
+# Copy the example environment file if .env doesn’t exist
+RUN if [ ! -f .env ]; then cp .env.example .env; fi
+
+# Generate key
+RUN php artisan key:generate --force
+
+# === OPTIONAL ===
+# Run migrations automatically (will skip errors if DB not ready)
 RUN php artisan migrate --force || true
 
+# Redirect logs to Render’s logs
+RUN sed -i 's|ErrorLog.*|ErrorLog /dev/stderr|g' /etc/apache2/apache2.conf \
+    && sed -i 's|CustomLog.*|CustomLog /dev/stdout combined|g' /etc/apache2/apache2.conf
+
+# Expose port 80
 EXPOSE 80
+
+# Start Apache in foreground
 CMD ["apache2-foreground"]
