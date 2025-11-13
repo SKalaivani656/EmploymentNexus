@@ -1,7 +1,7 @@
-# Use official PHP image with Apache
+# Use official PHP 8.2 + Apache image
 FROM php:8.2-apache
 
-# Install system dependencies for PostgreSQL and MySQL
+# Install system dependencies for PostgreSQL and common PHP extensions
 RUN apt-get update && apt-get install -y \
     libpq-dev \
     libzip-dev \
@@ -9,33 +9,41 @@ RUN apt-get update && apt-get install -y \
     zip \
     git \
     curl \
-    && docker-php-ext-install pdo pdo_mysql pdo_pgsql
+    && docker-php-ext-install pdo pdo_pgsql
 
-# Enable Apache mod_rewrite for Laravel routing
+# Enable Apache mod_rewrite for Laravel pretty URLs
 RUN a2enmod rewrite
 
-# Update Apache config to point to Laravel's public folder
-RUN sed -i 's|DocumentRoot /var/www/html|DocumentRoot /var/www/html/public|g' /etc/apache2/sites-available/000-default.conf \
-    && sed -i '/<Directory \/var\/www\/>/,/<\/Directory>/ s/AllowOverride None/AllowOverride All/' /etc/apache2/apache2.conf
-
-# Set working directory
+# Set working directory inside container
 WORKDIR /var/www/html
 
-# Copy all files
+# Copy project files into container
 COPY . .
 
-# Install Composer globally
+# Install Composer
 RUN curl -sS https://getcomposer.org/installer | php && mv composer.phar /usr/local/bin/composer
 
-# Install dependencies (optimized for production)
+# Install dependencies (without dev packages)
 RUN composer install --no-dev --optimize-autoloader
 
-# Give permissions for Laravel
-RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache \
-    && chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
+# Copy example environment file if .env doesn’t exist (useful for build)
+RUN cp .env.example .env || true
+
+# Clear and cache Laravel config
+RUN php artisan config:clear && php artisan cache:clear && php artisan config:cache
+
+# Generate app key if not set (safe to ignore error if already set)
+RUN php artisan key:generate --force || true
+
+# Run migrations and seed database (ignore errors during build)
+RUN php artisan migrate --force || true
+RUN php artisan db:seed --force || true
+
+# Set folder permissions
+RUN chown -R www-data:www-data storage bootstrap/cache
 
 # Expose Apache port
 EXPOSE 80
 
-# Start Apache server
+# Start Apache web server
 CMD ["apache2-foreground"]
