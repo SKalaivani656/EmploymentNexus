@@ -1,7 +1,7 @@
-# Use official PHP 8.2 + Apache image
+# Use official PHP image with Apache
 FROM php:8.2-apache
 
-# Install system dependencies for PostgreSQL and common PHP extensions
+# Install dependencies
 RUN apt-get update && apt-get install -y \
     libpq-dev \
     libzip-dev \
@@ -9,51 +9,37 @@ RUN apt-get update && apt-get install -y \
     zip \
     git \
     curl \
-    && docker-php-ext-configure pdo_pgsql \
-    && docker-php-ext-install pdo pdo_pgsql
+    && docker-php-ext-install pdo pdo_mysql pdo_pgsql
 
-# Enable Apache mod_rewrite for Laravel pretty URLs
+# Enable Apache mod_rewrite
 RUN a2enmod rewrite
 
-# Configure Apache to serve from Laravel's /public directory
-RUN echo '<VirtualHost *:80>\n\
-    DocumentRoot /var/www/html/public\n\
-    <Directory /var/www/html/public>\n\
-        AllowOverride All\n\
-        Require all granted\n\
-    </Directory>\n\
-</VirtualHost>' > /etc/apache2/sites-available/000-default.conf
-
-# Set working directory inside container
+# Set working directory
 WORKDIR /var/www/html
 
-# Copy project files into container
+# Copy project files
 COPY . .
+
+# Set Laravel public directory as Apache document root
+RUN sed -i 's|/var/www/html|/var/www/html/public|g' /etc/apache2/sites-available/000-default.conf
+
+# Copy Laravel's .htaccess (if missing)
+RUN if [ ! -f public/.htaccess ]; then \
+    echo '<IfModule mod_rewrite.c>\nRewriteEngine On\nRewriteCond %{REQUEST_FILENAME} !-d\nRewriteCond %{REQUEST_FILENAME} !-f\nRewriteRule ^ index.php [L]\n</IfModule>' > public/.htaccess; \
+    fi
 
 # Install Composer
 RUN curl -sS https://getcomposer.org/installer | php && mv composer.phar /usr/local/bin/composer
 
-# Install dependencies (without dev packages)
+# Install dependencies (optimize for production)
 RUN composer install --no-dev --optimize-autoloader
 
-# Copy example environment file if .env doesn’t exist (useful for build)
-RUN cp .env.example .env || true
+# Set correct permissions
+RUN chown -R www-data:www-data storage bootstrap/cache && \
+    chmod -R 775 storage bootstrap/cache
 
-# Clear and cache Laravel config
-RUN php artisan config:clear && php artisan cache:clear && php artisan config:cache
-
-# Generate app key if not set (safe to ignore error if already set)
-RUN php artisan key:generate --force || true
-
-# Run migrations and seed database (ignore errors during build)
-RUN php artisan migrate --force || true
-RUN php artisan db:seed --force || true
-
-# Set folder permissions
-RUN chown -R www-data:www-data storage bootstrap/cache
-
-# Expose Apache port
+# Expose port 80
 EXPOSE 80
 
-# Start Apache web server
+# Start Apache
 CMD ["apache2-foreground"]
