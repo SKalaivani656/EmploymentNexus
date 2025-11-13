@@ -6,7 +6,7 @@ WORKDIR /var/www/html
 
 # Install required PHP extensions and system dependencies
 RUN apt-get update && apt-get install -y \
-    git zip unzip libpng-dev libonig-dev libxml2-dev libzip-dev libpq-dev \
+    git zip unzip curl libpng-dev libonig-dev libxml2-dev libzip-dev libpq-dev \
     && docker-php-ext-install pdo pdo_pgsql mbstring exif pcntl bcmath gd zip
 
 # Enable Apache mod_rewrite
@@ -27,6 +27,13 @@ COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 # Install Laravel dependencies
 RUN composer install --no-dev --optimize-autoloader --no-interaction
+
+# -----------------------------
+# ✅ Install Node.js and build assets (Minimal Additions)
+# -----------------------------
+RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && apt-get install -y nodejs
+RUN npm install && npm run build
+# -----------------------------
 
 # Clear caches and optimize
 RUN php artisan config:clear || true && php artisan cache:clear || true && \
