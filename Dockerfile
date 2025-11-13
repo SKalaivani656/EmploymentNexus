@@ -38,18 +38,8 @@ RUN if [ ! -f .env ]; then cp .env.example .env; fi
 # Generate key
 RUN php artisan key:generate --force || true
 
-# Run migrations automatically (safe if DB not ready)
-RUN php artisan migrate --force || true
-
-# Redirect logs to Render’s logs
-RUN sed -i 's|ErrorLog.*|ErrorLog /dev/stderr|g' /etc/apache2/apache2.conf \
-    && sed -i 's|CustomLog.*|CustomLog /dev/stdout combined|g' /etc/apache2/apache2.conf
-
-# Optional: fix Apache “ServerName” warning
-RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf
-
-# Expose port 80
-EXPOSE 80
-
-# Start Apache in foreground
-CMD ["apache2-foreground"]
+# --- Wait for the database, then run migrations ---
+CMD bash -c "echo 'Waiting for database...' && \
+    sleep 10 && \
+    php artisan migrate --force && \
+    apache2-foreground"
