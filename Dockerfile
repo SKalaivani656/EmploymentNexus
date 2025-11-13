@@ -1,39 +1,33 @@
-# Base image
+# Use official PHP image
 FROM php:8.2-apache
 
-# Install PHP extensions
-RUN apt-get update && apt-get install -y \
-    libpq-dev \
-    libzip-dev \
-    unzip \
-    git \
-    curl \
-    && docker-php-ext-install pdo_pgsql pdo_mysql zip
+# Install required extensions
+RUN docker-php-ext-install pdo pdo_mysql pdo_pgsql
 
-# Install Composer
-COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
-
-# Enable Apache rewrite module
+# Enable Apache mod_rewrite
 RUN a2enmod rewrite
-
-# Copy app to container
-COPY . /var/www/html
 
 # Set working directory
 WORKDIR /var/www/html
 
+# Copy everything
+COPY . .
+
+# Install Composer
+RUN curl -sS https://getcomposer.org/installer | php && mv composer.phar /usr/local/bin/composer
+
 # Install dependencies
-RUN composer install --optimize-autoloader --no-dev
+RUN composer install --no-dev --optimize-autoloader
 
 # Set permissions
-RUN chown -R www-data:www-data storage bootstrap/cache \
-    && chmod -R 775 storage bootstrap/cache
+RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
 
-# Set Apache to point to Laravel public folder
-RUN sed -i 's|DocumentRoot /var/www/html|DocumentRoot /var/www/html/public|g' /etc/apache2/sites-available/000-default.conf
+# Run migrations and seed database (ignore seeding errors)
+RUN php artisan migrate --force || true
+RUN php artisan db:seed --force || true
 
-# Expose port
-EXPOSE 10000
+# Expose port 80
+EXPOSE 80
 
 # Start Apache
 CMD ["apache2-foreground"]
