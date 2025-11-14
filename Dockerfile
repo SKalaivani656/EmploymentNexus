@@ -15,10 +15,10 @@ RUN a2enmod rewrite
 # Copy project files to container
 COPY . .
 
-# Set proper Apache document root to Laravel's public folder
+# Set Apache document root to Laravel public folder
 RUN sed -i 's|/var/www/html|/var/www/html/public|g' /etc/apache2/sites-available/000-default.conf
 
-# Fix permissions for Laravel
+# Fix permissions
 RUN chown -R www-data:www-data /var/www/html \
     && chmod -R 755 /var/www/html/storage /var/www/html/bootstrap/cache
 
@@ -28,28 +28,30 @@ COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 # Install Laravel dependencies
 RUN composer install --no-dev --optimize-autoloader --no-interaction
 
-# -----------------------------
-# Install Node.js
-RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && apt-get install -y nodejs
+# ----------------------------------------------------
+# Install Node.js (for Laravel Mix)
+# ----------------------------------------------------
+RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
+    && apt-get install -y nodejs
 
-# Fix Webpack + OpenSSL 3 error
+# Fix Webpack error (OpenSSL issue)
 ENV NODE_OPTIONS=--openssl-legacy-provider
 
-# Install and build assets
+# Install NPM packages + build assets
 RUN npm install && npm run prod
+# ----------------------------------------------------
 
-
-# Clear caches and optimize
+# Clear caches
 RUN php artisan config:clear || true && php artisan cache:clear || true && \
     php artisan route:clear || true && php artisan view:clear || true
 
-# Copy the example environment file if .env doesn’t exist
+# Create .env if not exists
 RUN if [ ! -f .env ]; then cp .env.example .env; fi
 
 # Generate key
 RUN php artisan key:generate --force || true
 
-# --- Wait for the database, then run migrations ---
+# Run migrations then start Apache
 CMD bash -c "echo 'Waiting for database...' && \
     sleep 10 && \
     php artisan migrate --force && \
