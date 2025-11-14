@@ -32,7 +32,7 @@ RUN composer install --no-dev --optimize-autoloader --no-interaction
 # ✅ Install Node.js and build assets (Minimal Additions)
 # -----------------------------
 RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && apt-get install -y nodejs
-RUN npm install && npm run build
+RUN npm install && npm run prod
 # -----------------------------
 
 # Clear caches and optimize
