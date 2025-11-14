@@ -29,11 +29,15 @@ COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 RUN composer install --no-dev --optimize-autoloader --no-interaction
 
 # -----------------------------
-# ✅ Install Node.js and build assets (Minimal Additions)
-# -----------------------------
+# Install Node.js
 RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && apt-get install -y nodejs
+
+# Fix Webpack + OpenSSL 3 error
+ENV NODE_OPTIONS=--openssl-legacy-provider
+
+# Install and build assets
 RUN npm install && npm run prod
-# -----------------------------
+
 
 # Clear caches and optimize
 RUN php artisan config:clear || true && php artisan cache:clear || true && \
